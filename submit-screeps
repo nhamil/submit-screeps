@@ -1,4 +1,4 @@
-#!/usr/bin/env python3 
+#!/usr/bin/env python 
 
 import argparse
 import base64 
@@ -9,6 +9,7 @@ import pathlib
 import re 
 import shutil
 import sys 
+import time
 
 def submit_data(host, port, user, passwd, data): 
     code = -1 
@@ -19,7 +20,7 @@ def submit_data(host, port, user, passwd, data):
 
         encoded_data = json.dumps(data).encode('utf8') 
 
-        conn = http.client.HTTPConnection("{}:{}".format(host, port)) 
+        conn = http.client.HTTPConnection("{}:{}".format(host, port), timeout=3) 
         conn.request("POST", "/api/user/code", headers={
             "Authorization": auth,
             "Content-Type": "application/json; charset=utf-8", 
@@ -27,7 +28,7 @@ def submit_data(host, port, user, passwd, data):
         }, body=encoded_data)
         res = conn.getresponse() 
         code = res.getcode() 
-
+        
         conn.close() 
     except: 
         pass 
@@ -37,6 +38,8 @@ def submit_data(host, port, user, passwd, data):
 def filter_file_name(name, src): 
     name = name.replace(src+"/", "", 1)
     name = name.replace("/", ".") 
+    name = name.replace(src+"\\", "", 1)
+    name = name.replace("\\", ".") 
     if name.endswith(".js"): 
         name = name[:-3] 
     return name 
@@ -132,10 +135,13 @@ if submit_type == 'http':
         success = True 
 
 elif submit_type == 'folder': 
+    print("Copying files...") 
+
     try: 
         path = "{}/{}".format(loc, branch)
         if os.path.exists(path): 
-            shutil.rmtree(path) 
+            shutil.rmtree(path)
+            time.sleep(3.0); 
         os.makedirs(path, exist_ok=True) 
     
         for file in data['modules']: 
